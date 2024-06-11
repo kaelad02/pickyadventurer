@@ -1,16 +1,17 @@
 <section class="tab picker-{{tab.id}} {{tab.cssClass}}" data-tab="{{tab.id}}" data-group="{{tab.group}}">
   <div class="standard-form scrollable">
     {{#each types as |type|}}
-    <h4><i class="{{type.icon}}"></i> {{type.label}}</h4>
-    <ul>
-      {{#each type.list as |doc|}}
-      <li>
-        <label>{{doc.name}}
-          <input type="checkbox" name="{{tab.id}}.{{type.id}}.{{doc.id}}"/>
-        </label>
-      </li>
-      {{/each}}
-    </ul>
+    <div class="form-group">
+      <label>{{type.label}}</label>
+      <div class="form-fields">
+        <multi-select name="{{tab.id}}.{{type.id}}">
+          {{selectOptions type.list valueAttr="id" labelAttr="name"}}
+          {{!-- {{#each list as |doc|}}
+          <option value="{{doc.id}}" selected>{{doc.name}}</option>
+          {{/each}} --}}
+        </multi-select>
+      </div>
+    </div>
     {{/each}}
   </div>
 </section>
