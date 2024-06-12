@@ -15,5 +15,12 @@
   ],
   "esmodules": [
     "src/pickyadventurer.js"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
   ]
 }

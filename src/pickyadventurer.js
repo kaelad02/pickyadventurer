@@ -42,7 +42,6 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
     classes: ["pickyadventurer"],
     tag: "form",
     window: {
-      title: "TODO",
       contentClasses: ["standard-form"],
     },
     position: {
@@ -79,6 +78,10 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
     header: "create",
   };
 
+  get title() {
+    return `${game.i18n.localize("PICKER.label")}: ${this.adventure.name}`;
+  }
+
   /**
    * Context functions for the Handlebars templates
    */
@@ -97,10 +100,12 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
       case "create":
         context.tab = context.tabs.create;
         context.types = this.#getDocumentList(this.toCreate);
+        context.emptyLabel = "PICKER.TABS.createEmpty";
         break;
       case "update":
         context.tab = context.tabs.update;
         context.types = this.#getDocumentList(this.toUpdate);
+        context.emptyLabel = "PICKER.TABS.updateEmpty";
         break;
     }
     console.log(`part ${partId} .types`, context.types);
@@ -109,8 +114,18 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
 
   #getTabs() {
     const tabs = {
-      create: { id: "create", group: "header", icon: "fa-solid fa-plus", label: "Create" },
-      update: { id: "update", group: "header", icon: "fa-solid fa-pen-to-square", label: "Update" },
+      create: {
+        id: "create",
+        group: "header",
+        icon: "fa-solid fa-plus",
+        label: "PICKER.TABS.create",
+      },
+      update: {
+        id: "update",
+        group: "header",
+        icon: "fa-solid fa-pen-to-square",
+        label: "PICKER.TABS.update",
+      },
     };
     for (const v of Object.values(tabs)) {
       v.active = this.tabGroups[v.group] === v.id;
