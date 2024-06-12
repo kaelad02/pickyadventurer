@@ -4,36 +4,43 @@ Hooks.once("init", () => {
 
 Hooks.on("preImportAdventure", (adventure, importOptions, toCreate, toUpdate) => {
   if (importOptions.pickyadventurer) {
-    console.log("Picky Adventurer options are present");
+    console.log("Picky Adventurer options are present:", importOptions.pickyadventurer);
+    console.log("toCreate, toUpdate", toCreate, toUpdate);
+
+    // filter the toCreate and toUpdate objects
+    _filterImport(importOptions.pickyadventurer.toCreateIds, toCreate);
+    _filterImport(importOptions.pickyadventurer.toUpdateIds, toUpdate);
   } else {
     console.log("Picky Adventurer options are NOT presetnt");
 
-    // show dialog then import again
-    new Picker({ importOptions, toCreate, toUpdate }).render(true);
-    /* console.log("pretending to show dialog, then importing again");
-    importOptions.pickyadventurer = {};
-    adventure.import(importOptions); */
+    // show the Picker to choose what to import
+    new Picker({ adventure, importOptions, toCreate, toUpdate }).render(true);
+    return false;
   }
-
-  return false;
 });
 
-/* Hooks.once("ready", () => {
-  new Picker({}).render(true);
-}); */
+function _filterImport(selectedIds, documents) {
+  for (const type of Object.keys(documents)) {
+    const ids = selectedIds[type] ?? [];
+    documents[type] = documents[type].filter((doc) => ids.includes(doc._id));
+    if (documents[type].length === 0) delete documents[type];
+  }
+}
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options) {
     super(options);
 
-    this.importOptions = options.importOptions;
+    this.adventure = options.adventure;
+    this.importOptions = options.importOptions ?? {};
     this.toCreate = options.toCreate;
     this.toUpdate = options.toUpdate;
   }
 
   static DEFAULT_OPTIONS = {
     classes: ["pickyadventurer"],
+    tag: "form",
     window: {
       title: "TODO",
       contentClasses: ["standard-form"],
@@ -43,6 +50,7 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
       height: "auto",
     },
     form: {
+      handler: this.#onSubmitForm,
       closeOnSubmit: true,
     },
     actions: {
@@ -70,6 +78,10 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
   tabGroups = {
     header: "create",
   };
+
+  /**
+   * Context functions for the Handlebars templates
+   */
 
   async _prepareContext(_options) {
     return {
@@ -122,5 +134,36 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
         list: docs.map((doc) => ({ id: doc._id, name: doc.name })),
       };
     });
+  }
+
+  /**
+   * Form submission
+   */
+
+  static #onSubmitForm(event, form, formData) {
+    // TODO
+    console.log("Submit called");
+    console.log("formData:", formData);
+
+    const toCreateIds = Picker.#prepareSubmitList("create", formData);
+    const toUpdateIds = Picker.#prepareSubmitList("update", formData);
+    console.log("toCreateIds", toCreateIds);
+    console.log("toUpdateIds", toUpdateIds);
+
+    // trigger Adventure import again
+    this.importOptions.pickyadventurer = { toCreateIds, toUpdateIds };
+    this.adventure.import(this.importOptions);
+  }
+
+  static #prepareSubmitList(action, formData) {
+    return Object.entries(formData.object)
+      .filter(([key, _]) => key.startsWith(`${action}.`))
+      .reduce((obj, [key, ids]) => {
+        if (ids && ids.length) {
+          const type = key.split(".")[1];
+          obj[type] = ids;
+        }
+        return obj;
+      }, {});
   }
 }
