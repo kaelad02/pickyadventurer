@@ -1,19 +1,12 @@
-Hooks.once("init", () => {
-  console.log("Hello world, Picky Adventurer here");
-});
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 Hooks.on("preImportAdventure", (adventure, importOptions, toCreate, toUpdate) => {
   if (importOptions.pickyadventurer) {
-    console.log("Picky Adventurer options are present:", importOptions.pickyadventurer);
-    console.log("toCreate, toUpdate", toCreate, toUpdate);
-
-    // filter the toCreate and toUpdate objects
+    // found the Picker options, filter the toCreate and toUpdate objects
     _filterImport(importOptions.pickyadventurer.toCreateIds, toCreate);
     _filterImport(importOptions.pickyadventurer.toUpdateIds, toUpdate);
   } else {
-    console.log("Picky Adventurer options are NOT presetnt");
-
-    // show the Picker to choose what to import
+    // no Picker options, show it and stop the import
     new Picker({ adventure, importOptions, toCreate, toUpdate }).render(true);
     return false;
   }
@@ -27,7 +20,6 @@ function _filterImport(selectedIds, documents) {
   }
 }
 
-const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options) {
     super(options);
@@ -51,9 +43,6 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
     form: {
       handler: this.#onSubmitForm,
       closeOnSubmit: true,
-    },
-    actions: {
-      // TODO
     },
   };
 
@@ -108,7 +97,6 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
         context.emptyLabel = "PICKER.TABS.updateEmpty";
         break;
     }
-    console.log(`part ${partId} .types`, context.types);
     return context;
   }
 
@@ -156,14 +144,8 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
    */
 
   static #onSubmitForm(event, form, formData) {
-    // TODO
-    console.log("Submit called");
-    console.log("formData:", formData);
-
     const toCreateIds = Picker.#prepareSubmitList("create", formData);
     const toUpdateIds = Picker.#prepareSubmitList("update", formData);
-    console.log("toCreateIds", toCreateIds);
-    console.log("toUpdateIds", toUpdateIds);
 
     // trigger Adventure import again
     this.importOptions.pickyadventurer = { toCreateIds, toUpdateIds };
