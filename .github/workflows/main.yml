@@ -85,22 +85,18 @@ jobs:
         uses: battila7/get-version-action@v2
 
 
-      # Modify "module.json" with values specific to the release.
-      # Since the values for the "version" and "url" keys aren't known ahead of
-      # time, the manifest file in the repository is updated with these values.
-      #
-      # While this does modify the manifest file in-place, the changes are not
-      # commited to the repository, and only exist in the action's filesystem.
-      - name: Modify Module Manifest With Release-Specific Values
+      # Substitute the Manifest and Download URLs in the module.json
+      - name: Substitute Manifest and Download Links For Versioned Ones
         id: sub_manifest_link_version
-        uses: cschleiden/replace-tokens@v1
+        uses: microsoft/variable-substitution@v1
         with:
-          files: 'module.json'
+          files: "module.json"
         env:
-          VERSION: ${{steps.get_version.outputs.version-without-v}}
-          URL: ${{ env.project_url }}
-          MANIFEST: ${{ env.latest_manifest_url }}
-          DOWNLOAD: ${{ env.release_module_url }}
+          version: ${{steps.get_version.outputs.version-without-v}}
+          url: ${{ env.project_url }}
+          manifest: ${{ env.latest_manifest_url }}
+          download: ${{ env.release_module_url }}
+          readme: ${{ env.project_url }}/blob/main/README.md
 
 
       # Create a "module.zip" archive containing all the module's required files.
@@ -121,6 +117,7 @@ jobs:
             LICENSE                              \
             lang/                                \
             src/                                 \
+            css/                                 \
             templates/
 
 
