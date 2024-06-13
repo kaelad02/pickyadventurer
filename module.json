@@ -16,6 +16,9 @@
   "esmodules": [
     "src/pickyadventurer.js"
   ],
+  "styles": [
+    "css/pickyadventurer.css"
+  ],
   "languages": [
     {
       "lang": "en",

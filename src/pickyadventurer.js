@@ -44,6 +44,10 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
       handler: this.#onSubmitForm,
       closeOnSubmit: true,
     },
+    actions: {
+      addAll: this.#onAddAll,
+      removeAll: this.#onRemoveAll,
+    },
   };
 
   static PARTS = {
@@ -162,5 +166,25 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         return obj;
       }, {});
+  }
+
+  /**
+   * Actions
+   */
+
+  static #onAddAll(event, actionButton) {
+    event.stopPropagation();
+
+    // select each option
+    const multiSelect = actionButton.closest("fieldset").querySelector("multi-select");
+    Object.keys(multiSelect._choices).forEach((value) => multiSelect.select(value));
+  }
+
+  static #onRemoveAll(event, actionButton) {
+    event.stopPropagation();
+
+    // unselect each option
+    const multiSelect = actionButton.closest("fieldset").querySelector("multi-select");
+    Object.keys(multiSelect._choices).forEach((value) => multiSelect.unselect(value));
   }
 }
