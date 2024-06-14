@@ -93,11 +93,13 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
       case "create":
         context.tab = context.tabs.create;
         context.types = this.#getDocumentList(this.toCreate);
+        context.instructions = "PICKER.TABS.createInstructions",
         context.emptyLabel = "PICKER.TABS.createEmpty";
         break;
       case "update":
         context.tab = context.tabs.update;
         context.types = this.#getDocumentList(this.toUpdate);
+        context.instructions = "PICKER.TABS.updateInstructions",
         context.emptyLabel = "PICKER.TABS.updateEmpty";
         break;
     }

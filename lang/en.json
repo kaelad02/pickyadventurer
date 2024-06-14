@@ -3,8 +3,10 @@
     "label": "Picker",
     "TABS": {
       "create": "Create",
+      "createInstructions": "Select the documents you want to create from the adventure.",
       "createEmpty": "There are no documents to create.",
       "update": "Update",
+      "updateInstructions": "Select the documents you want to update from the adventure.",
       "updateEmpty": "There are no documents to update."
     },
     "ACTIONS": {
