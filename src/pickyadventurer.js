@@ -37,7 +37,7 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
       contentClasses: ["standard-form"],
     },
     position: {
-      width: 400,
+      width: 480,
       height: "auto",
     },
     form: {

@@ -1,14 +1,25 @@
-.pickyadventurer .document-type-controls {
+.pickyadventurer .tab {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+.pickyadventurer .tab .document-type-controls {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   justify-content: flex-end;
   align-items: center;
 }
-.pickyadventurer .document-type-controls button.icon {
+.pickyadventurer .tab .document-type-controls button.icon {
   flex: 0 0 24px;
   height: 24px;
   padding: 0;
   font-size: var(--font-size-12);
   line-height: 24px;
+}
+.pickyadventurer .tab .scrollable {
+  --scroll-margin: 0.5rem;
+  width: 100%;
+  flex: 1;
 }
