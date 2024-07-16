@@ -2,7 +2,7 @@
   <div class="standard-form scrollable">
     {{#each types as |type|}}
     <fieldset>
-      <legend>{{type.label}}</legend>
+      <legend>{{#if type.icon}}<i class="{{type.icon}}"></i> {{/if}}{{type.label}}</legend>
       <div class="document-type-controls">
         <button type="button" class="icon" data-action="addAll" data-tooltip="{{localize "PICKER.ACTIONS.addAll"}}" aria-label="{{localize "PICKER.ACTIONS.addAll"}}">
           <i class="fa-solid fa-check-double"></i>
