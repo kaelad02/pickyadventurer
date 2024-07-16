@@ -131,16 +131,105 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   #getDocumentList(toImport) {
-    return Object.entries(toImport).map(([docType, docs]) => {
-      const config = CONFIG[docType];
-      const cls = getDocumentClass(docType);
+    const allFolders = [];
+    if (this.toCreate.Folder) allFolders.push(...this.toCreate.Folder);
+    if (this.toUpdate.Folder) allFolders.push(...this.toUpdate.Folder);
+
+    return Object.entries(toImport).map(([type, docs]) => {
+      const config = CONFIG[type];
+      const cls = getDocumentClass(type);
+
+      // Get a tree represntation of the docs in their folders
+      const folders = allFolders.filter((f) => f.type === type);
+      const tree = type === "Folder" ? this.#buildTreeFolder(docs) : this.#buildTree(docs, folders);
+
+      // Flatten the folders to be used as select optgroups
+      const groupsById = {};
+      const fillGroups = (node) => {
+        if (node.folder) {
+          const parentName = groupsById[node.folder.folder];
+          const name = parentName ? `${parentName} — ${node.folder.name}` : node.folder.name;
+          groupsById[node.folder._id] = name;
+        }
+        node.children.forEach((c) => fillGroups(c));
+      };
+      fillGroups(tree);
+
+      // Build the list of documents for select options
+      const options = [];
+      const fillOptions = (node) => {
+        const group = node.folder ? groupsById[node.folder._id] : undefined;
+        node.entries.forEach((e) => {
+          const option = { value: e._id, label: e.name };
+          if (group) option.group = group;
+          options.push(option);
+        });
+        node.children.forEach((c) => fillOptions(c));
+      };
+      fillOptions(tree, "");
+
       return {
-        id: docType,
+        id: type,
         icon: config.sidebarIcon,
         label: game.i18n.localize(cls.metadata.labelPlural),
-        list: docs.map((doc) => ({ id: doc._id, name: doc.name })),
+        options,
+        groups: Object.values(groupsById),
       };
     });
+  }
+
+  #buildTree(docs, folders) {
+    const createNode = (folder) => ({ folder, children: [], entries: [] });
+    const fillFolder = (folder, depth) => {
+      const node = createNode(folder);
+      const sort = folder.sorting === "a" ? Picker._sortAlpha : Picker._sortManual;
+      // traverse the child folders
+      if (depth <= CONST.FOLDER_MAX_DEPTH) {
+        node.children = folders
+          .filter((f) => f.folder === folder._id)
+          .sort(sort)
+          .map((f) => fillFolder(f, depth + 1))
+          .filter((node) => node !== null);
+      }
+      // find documents in this folder
+      node.entries = docs.filter((doc) => doc.folder === folder._id).sort(sort);
+      // only return node if it's not empty, we don't want to show empty folders
+      return node.children.length || node.entries.length ? node : null;
+    };
+
+    // build root node
+    const tree = createNode(null);
+    tree.children = folders
+      .filter((f) => !f.folder)
+      .map((f) => fillFolder(f, 1))
+      .filter((node) => node !== null);
+    tree.entries = docs.filter((d) => !d.folder);
+
+    return tree;
+  }
+
+  /**
+   * Special handling for folders, group by document type rather than the normal tree
+   */
+  #buildTreeFolder(docs) {
+    // organize the folders by type
+    const byType = docs.reduce((obj, folder) => {
+      if (!obj[folder.type]) obj[folder.type] = [];
+      obj[folder.type].push(folder);
+      return obj;
+    }, {});
+
+    // make fake folders to group by type
+    const children = Object.entries(byType).map(([type, folders]) => {
+      const cls = getDocumentClass(type);
+      return {
+        folder: { _id: type, name: game.i18n.localize(cls.metadata.labelPlural) },
+        children: [],
+        entries: folders.map((f) => ({ _id: f._id, name: f.name, folder: type })),
+      };
+    });
+
+    return { folder: null, children, entries: [] };
   }
 
   /**
@@ -186,5 +275,17 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
     // unselect each option
     const multiSelect = actionButton.closest("fieldset").querySelector("multi-select");
     Object.keys(multiSelect._choices).forEach((value) => multiSelect.unselect(value));
+  }
+
+  /**
+   * Utility functions
+   */
+
+  static _sortAlpha(a, b) {
+    return a.name.localeCompare(b.name, game.i18n.lang);
+  }
+
+  static _sortManual(a, b) {
+    return a.sort - b.sort;
   }
 }
