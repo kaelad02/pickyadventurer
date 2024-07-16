@@ -135,15 +135,13 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this.toCreate.Folder) allFolders.push(...this.toCreate.Folder);
     if (this.toUpdate.Folder) allFolders.push(...this.toUpdate.Folder);
 
-    return Object.entries(toImport).map(([docType, docs]) => {
-      const config = CONFIG[docType];
-      const cls = getDocumentClass(docType);
+    return Object.entries(toImport).map(([type, docs]) => {
+      const config = CONFIG[type];
+      const cls = getDocumentClass(type);
 
       // Get a tree represntation of the docs in their folders
-      const tree =
-        docType === "Folder"
-          ? this.#buildTreeForFolders(docs)
-          : this.#buildTree(docType, docs, allFolders);
+      const folders = allFolders.filter((f) => f.type === type);
+      const tree = type === "Folder" ? this.#buildTreeFolder(docs) : this.#buildTree(docs, folders);
 
       // Flatten the folders to be used as select optgroups
       const groupsById = {};
@@ -171,7 +169,7 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
       fillOptions(tree, "");
 
       return {
-        id: docType,
+        id: type,
         icon: config.sidebarIcon,
         label: game.i18n.localize(cls.metadata.labelPlural),
         options,
@@ -180,10 +178,7 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
     });
   }
 
-  #buildTree(docType, docs, allFolders) {
-    // Get the folders used by the documents
-    const folders = allFolders.filter((f) => f.type === docType);
-
+  #buildTree(docs, folders) {
     const createNode = (folder) => ({ folder, children: [], entries: [] });
     const fillFolder = (folder, depth) => {
       const node = createNode(folder);
@@ -216,7 +211,7 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Special handling for folders, group by document type rather than the normal tree
    */
-  #buildTreeForFolders(docs) {
+  #buildTreeFolder(docs) {
     // organize the folders by type
     const byType = docs.reduce((obj, folder) => {
       if (!obj[folder.type]) obj[folder.type] = [];
@@ -225,12 +220,12 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
     }, {});
 
     // make fake folders to group by type
-    const children = Object.entries(byType).map(([docType, folders]) => {
-      const cls = getDocumentClass(docType);
+    const children = Object.entries(byType).map(([type, folders]) => {
+      const cls = getDocumentClass(type);
       return {
-        folder: { _id: docType, name: game.i18n.localize(cls.metadata.labelPlural) },
+        folder: { _id: type, name: game.i18n.localize(cls.metadata.labelPlural) },
         children: [],
-        entries: folders.map((f) => ({ _id: f._id, name: f.name, folder: docType })),
+        entries: folders.map((f) => ({ _id: f._id, name: f.name, folder: type })),
       };
     });
 
