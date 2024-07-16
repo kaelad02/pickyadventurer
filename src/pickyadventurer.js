@@ -146,30 +146,27 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
           : this.#buildTree(docType, docs, allFolders);
 
       // Flatten the folders to be used as select optgroups
-      const groups = [];
-      const fillGroups = (node, prefix) => {
+      const groupsById = {};
+      const fillGroups = (node) => {
         if (node.folder) {
-          groups.push(`${prefix}${node.folder.name}`);
-          prefix += `${node.folder.name} — `;
+          const parentName = groupsById[node.folder.folder];
+          const name = parentName ? `${parentName} — ${node.folder.name}` : node.folder.name;
+          groupsById[node.folder._id] = name;
         }
-        node.children.forEach((c) => fillGroups(c, prefix));
+        node.children.forEach((c) => fillGroups(c));
       };
-      fillGroups(tree, "");
+      fillGroups(tree);
 
       // Build the list of documents for select options
       const options = [];
-      const fillOptions = (node, prefix) => {
-        let group = undefined;
-        if (node.folder) {
-          group = `${prefix}${node.folder.name}`;
-          prefix += `${node.folder.name} — `;
-        }
+      const fillOptions = (node) => {
+        const group = node.folder ? groupsById[node.folder._id] : undefined;
         node.entries.forEach((e) => {
           const option = { value: e._id, label: e.name };
           if (group) option.group = group;
           options.push(option);
         });
-        node.children.forEach((c) => fillOptions(c, prefix));
+        node.children.forEach((c) => fillOptions(c));
       };
       fillOptions(tree, "");
 
@@ -178,7 +175,7 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
         icon: config.sidebarIcon,
         label: game.i18n.localize(cls.metadata.labelPlural),
         options,
-        groups,
+        groups: Object.values(groupsById),
       };
     });
   }
@@ -229,9 +226,9 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
     const children = Object.entries(byType).map(([docType, folders]) => {
       const cls = getDocumentClass(docType);
       return {
-        folder: { name: game.i18n.localize(cls.metadata.labelPlural) },
+        folder: { _id: docType, name: game.i18n.localize(cls.metadata.labelPlural) },
         children: [],
-        entries: folders,
+        entries: folders.map((f) => ({ _id: f._id, name: f.name, folder: docType })),
       };
     });
 
