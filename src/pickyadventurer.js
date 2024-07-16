@@ -92,12 +92,12 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
         break;
       case "create":
         context.tab = context.tabs.create;
-        context.types = this.#buildTree(this.toCreate);
+        context.types = this.#getDocumentList(this.toCreate);
         context.emptyLabel = "PICKER.TABS.createEmpty";
         break;
       case "update":
         context.tab = context.tabs.update;
-        context.types = this.#buildTree(this.toUpdate);
+        context.types = this.#getDocumentList(this.toUpdate);
         context.emptyLabel = "PICKER.TABS.updateEmpty";
         break;
     }
@@ -131,35 +131,21 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   #getDocumentList(toImport) {
-    return Object.entries(toImport).map(([docType, docs]) => {
-      const config = CONFIG[docType];
-      const cls = getDocumentClass(docType);
-      return {
-        id: docType,
-        icon: config.sidebarIcon,
-        label: game.i18n.localize(cls.metadata.labelPlural),
-        list: docs.map((doc) => ({ id: doc._id, name: doc.name })),
-      };
-    });
-  }
-
-  #buildTree(toImport) {
     const allFolders = [];
     if (this.toCreate.Folder) allFolders.push(...this.toCreate.Folder);
     if (this.toUpdate.Folder) allFolders.push(...this.toUpdate.Folder);
-    console.log("All Folders:", allFolders);
 
     return Object.entries(toImport).map(([docType, docs]) => {
       const config = CONFIG[docType];
       const cls = getDocumentClass(docType);
 
+      // Get a tree represntation of the docs in their folders
       const tree =
         docType === "Folder"
           ? this.#buildTreeForFolders(docs)
-          : this.#buildTreeFor(docType, docs, allFolders);
-      console.log(`Tree for ${docType}:`, tree);
-      // TODO use tree
+          : this.#buildTree(docType, docs, allFolders);
 
+      // Flatten the folders to be used as select optgroups
       const groups = [];
       const fillGroups = (node, prefix) => {
         if (node.folder) {
@@ -169,8 +155,8 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
         node.children.forEach((c) => fillGroups(c, prefix));
       };
       fillGroups(tree, "");
-      console.log("groups", groups);
 
+      // Build the list of documents for select options
       const options = [];
       const fillOptions = (node, prefix) => {
         let group = undefined;
@@ -186,46 +172,18 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
         node.children.forEach((c) => fillOptions(c, prefix));
       };
       fillOptions(tree, "");
-      console.log("options", options);
 
       return {
         id: docType,
         icon: config.sidebarIcon,
         label: game.i18n.localize(cls.metadata.labelPlural),
-        list: docs.map((doc) => ({ id: doc._id, name: doc.name })),
         options,
         groups,
       };
     });
-
-    /*
-    const allFolders = new DocumentCollection(this.adventure.folders.map((f) => [f.id, f]));
-    return Object.entries(toImport).map(([docType, docs]) => {
-      const config = CONFIG[docType];
-      const cls = getDocumentClass(docType);
-      // build the groups
-      const folderIds = new Set(docs.map(doc => doc.folder).filter(f => !!f));
-
-      const foldersById = new Map(); // id => {name, depth}
-      for (let depth = 1; depth <= CONST.FOLDER_MAX_DEPTH; depth++) {
-        for (const folderId of folderIds) {
-          const folder = allFolders.get(folderId);
-          const depth = 
-        }
-      }
-
-
-      return {
-        id: docType,
-        icon: config.sidebarIcon,
-        label: game.i18n.localize(cls.metadata.labelPlural),
-        list: docs.map((doc) => ({ id: doc._id, name: doc.name, group: "TODO" })),
-        groups,
-      };
-    }); */
   }
 
-  #buildTreeFor(docType, docs, allFolders) {
+  #buildTree(docType, docs, allFolders) {
     // Get the folders used by the documents
     const folders = allFolders.filter((f) => f.type === docType);
 
