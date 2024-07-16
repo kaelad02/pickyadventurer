@@ -187,15 +187,17 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
     const createNode = (folder) => ({ folder, children: [], entries: [] });
     const fillFolder = (folder, depth) => {
       const node = createNode(folder);
+      const sort = folder.sorting === "a" ? Picker._sortAlpha : Picker._sortManual;
       // traverse the child folders
       if (depth <= CONST.FOLDER_MAX_DEPTH) {
         node.children = folders
           .filter((f) => f.folder === folder._id)
+          .sort(sort)
           .map((f) => fillFolder(f, depth + 1))
           .filter((node) => node !== null);
       }
       // find documents in this folder
-      node.entries = docs.filter((doc) => doc.folder === folder._id);
+      node.entries = docs.filter((doc) => doc.folder === folder._id).sort(sort);
       // only return node if it's not empty, we don't want to show empty folders
       return node.children.length || node.entries.length ? node : null;
     };
@@ -278,5 +280,17 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
     // unselect each option
     const multiSelect = actionButton.closest("fieldset").querySelector("multi-select");
     Object.keys(multiSelect._choices).forEach((value) => multiSelect.unselect(value));
+  }
+
+  /**
+   * Utility functions
+   */
+
+  static _sortAlpha(a, b) {
+    return a.name.localeCompare(b.name, game.i18n.lang);
+  }
+
+  static _sortManual(a, b) {
+    return a.sort - b.sort;
   }
 }
