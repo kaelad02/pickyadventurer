@@ -153,7 +153,10 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
       const config = CONFIG[docType];
       const cls = getDocumentClass(docType);
 
-      const tree = this.#buildTreeFor(docType, docs, allFolders);
+      const tree =
+        docType === "Folder"
+          ? this.#buildTreeForFolders(docs)
+          : this.#buildTreeFor(docType, docs, allFolders);
       console.log(`Tree for ${docType}:`, tree);
       // TODO use tree
 
@@ -251,6 +254,30 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
     tree.entries = docs.filter((d) => !d.folder);
 
     return tree;
+  }
+
+  /**
+   * Special handling for folders, group by document type rather than the normal tree
+   */
+  #buildTreeForFolders(docs) {
+    // organize the folders by type
+    const byType = docs.reduce((obj, folder) => {
+      if (!obj[folder.type]) obj[folder.type] = [];
+      obj[folder.type].push(folder);
+      return obj;
+    }, {});
+
+    // make fake folders to group by type
+    const children = Object.entries(byType).map(([docType, folders]) => {
+      const cls = getDocumentClass(docType);
+      return {
+        folder: { name: game.i18n.localize(cls.metadata.labelPlural) },
+        children: [],
+        entries: folders,
+      };
+    });
+
+    return { folder: null, children, entries: [] };
   }
 
   /**
