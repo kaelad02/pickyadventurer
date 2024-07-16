@@ -92,12 +92,12 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
         break;
       case "create":
         context.tab = context.tabs.create;
-        context.types = this.#getDocumentList(this.toCreate);
+        context.types = this.#buildTree(this.toCreate);
         context.emptyLabel = "PICKER.TABS.createEmpty";
         break;
       case "update":
         context.tab = context.tabs.update;
-        context.types = this.#getDocumentList(this.toUpdate);
+        context.types = this.#buildTree(this.toUpdate);
         context.emptyLabel = "PICKER.TABS.updateEmpty";
         break;
     }
@@ -141,6 +141,116 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
         list: docs.map((doc) => ({ id: doc._id, name: doc.name })),
       };
     });
+  }
+
+  #buildTree(toImport) {
+    const allFolders = [];
+    if (this.toCreate.Folder) allFolders.push(...this.toCreate.Folder);
+    if (this.toUpdate.Folder) allFolders.push(...this.toUpdate.Folder);
+    console.log("All Folders:", allFolders);
+
+    return Object.entries(toImport).map(([docType, docs]) => {
+      const config = CONFIG[docType];
+      const cls = getDocumentClass(docType);
+
+      const tree = this.#buildTreeFor(docType, docs, allFolders);
+      console.log(`Tree for ${docType}:`, tree);
+      // TODO use tree
+
+      const groups = [];
+      const fillGroups = (node, prefix) => {
+        if (node.folder) {
+          groups.push(`${prefix}${node.folder.name}`);
+          prefix += `${node.folder.name} — `;
+        }
+        node.children.forEach((c) => fillGroups(c, prefix));
+      };
+      fillGroups(tree, "");
+      console.log("groups", groups);
+
+      const options = [];
+      const fillOptions = (node, prefix) => {
+        let group = undefined;
+        if (node.folder) {
+          group = `${prefix}${node.folder.name}`;
+          prefix += `${node.folder.name} — `;
+        }
+        node.entries.forEach((e) => {
+          const option = { value: e._id, label: e.name };
+          if (group) option.group = group;
+          options.push(option);
+        });
+        node.children.forEach((c) => fillOptions(c, prefix));
+      };
+      fillOptions(tree, "");
+      console.log("options", options);
+
+      return {
+        id: docType,
+        icon: config.sidebarIcon,
+        label: game.i18n.localize(cls.metadata.labelPlural),
+        list: docs.map((doc) => ({ id: doc._id, name: doc.name })),
+        options,
+        groups,
+      };
+    });
+
+    /*
+    const allFolders = new DocumentCollection(this.adventure.folders.map((f) => [f.id, f]));
+    return Object.entries(toImport).map(([docType, docs]) => {
+      const config = CONFIG[docType];
+      const cls = getDocumentClass(docType);
+      // build the groups
+      const folderIds = new Set(docs.map(doc => doc.folder).filter(f => !!f));
+
+      const foldersById = new Map(); // id => {name, depth}
+      for (let depth = 1; depth <= CONST.FOLDER_MAX_DEPTH; depth++) {
+        for (const folderId of folderIds) {
+          const folder = allFolders.get(folderId);
+          const depth = 
+        }
+      }
+
+
+      return {
+        id: docType,
+        icon: config.sidebarIcon,
+        label: game.i18n.localize(cls.metadata.labelPlural),
+        list: docs.map((doc) => ({ id: doc._id, name: doc.name, group: "TODO" })),
+        groups,
+      };
+    }); */
+  }
+
+  #buildTreeFor(docType, docs, allFolders) {
+    // Get the folders used by the documents
+    const folders = allFolders.filter((f) => f.type === docType);
+
+    const createNode = (folder) => ({ folder, children: [], entries: [] });
+    const fillFolder = (folder, depth) => {
+      const node = createNode(folder);
+      // traverse the child folders
+      if (depth <= CONST.FOLDER_MAX_DEPTH) {
+        node.children = folders
+          .filter((f) => f.folder === folder._id)
+          .map((f) => fillFolder(f, depth + 1))
+          .filter((node) => node !== null);
+      }
+      // find documents in this folder
+      node.entries = docs.filter((doc) => doc.folder === folder._id);
+      // only return node if it's not empty, we don't want to show empty folders
+      return node.children.length || node.entries.length ? node : null;
+    };
+
+    // build root node
+    const tree = createNode(null);
+    tree.children = folders
+      .filter((f) => !f.folder)
+      .map((f) => fillFolder(f, 1))
+      .filter((node) => node !== null);
+    tree.entries = docs.filter((d) => !d.folder);
+
+    return tree;
   }
 
   /**
