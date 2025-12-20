@@ -56,19 +56,26 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
     },
     create: {
       template: "modules/pickyadventurer/templates/picker-part-list.hbs",
-      scrollable: [".scrollable"],
+      scrollable: [""],
     },
     update: {
       template: "modules/pickyadventurer/templates/picker-part-list.hbs",
-      scrollable: [".scrollable"],
+      scrollable: [""],
     },
     footer: {
       template: "templates/generic/form-footer.hbs",
     },
   };
 
-  tabGroups = {
-    header: "create",
+  static TABS = {
+    header: {
+      tabs: [
+        {id: "create", icon: "fa-solid fa-plus"},
+        {id: "update", icon: "fa-solid fa-pen-to-square"}
+      ],
+      initial: "create",
+      labelPrefix: "PICKER.TABS"
+    }
   };
 
   get title() {
@@ -79,13 +86,8 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
    * Context functions for the Handlebars templates
    */
 
-  async _prepareContext(_options) {
-    return {
-      tabs: this.#getTabs(),
-    };
-  }
-
-  async _preparePartContext(partId, context) {
+  async _preparePartContext(partId, context, options) {
+    context = await super._preparePartContext(partId, context, options);
     switch (partId) {
       case "footer":
         context.buttons = this.#getFooterButtons();
@@ -102,28 +104,6 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
         break;
     }
     return context;
-  }
-
-  #getTabs() {
-    const tabs = {
-      create: {
-        id: "create",
-        group: "header",
-        icon: "fa-solid fa-plus",
-        label: "PICKER.TABS.create",
-      },
-      update: {
-        id: "update",
-        group: "header",
-        icon: "fa-solid fa-pen-to-square",
-        label: "PICKER.TABS.update",
-      },
-    };
-    for (const v of Object.values(tabs)) {
-      v.active = this.tabGroups[v.group] === v.id;
-      v.cssClass = v.active ? "active" : "";
-    }
-    return tabs;
   }
 
   #getFooterButtons() {
