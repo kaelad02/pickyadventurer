@@ -4,8 +4,8 @@
   "version": "0.1",
   "description": "Picky Adventurer lets you pick what parts of an adventure to import.",
   "compatibility": {
-    "minimum": "12",
-    "verified": "12"
+    "minimum": "13",
+    "verified": "13"
   },
   "authors": [
     {

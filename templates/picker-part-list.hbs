@@ -1,5 +1,4 @@
-<section class="tab picker-{{tab.id}} flexcol {{tab.cssClass}}" data-tab="{{tab.id}}" data-group="{{tab.group}}">
-  <div class="standard-form scrollable">
+<div class="tab picker-{{tab.id}} scrollable {{tab.cssClass}}" data-tab="{{tab.id}}" data-group="{{tab.group}}">
     {{#each types as |type|}}
     <fieldset>
       <legend>{{#if type.icon}}<i class="{{type.icon}}"></i> {{/if}}{{type.label}}</legend>
@@ -22,5 +21,4 @@
     {{else}}
     <p><i class="fa-solid fa-circle-info"></i> {{localize emptyLabel}}</p>
     {{/each}}
-  </div>
-</section>
+</div>
