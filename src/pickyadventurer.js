@@ -119,7 +119,7 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
       const config = CONFIG[type];
       const cls = getDocumentClass(type);
 
-      // Get a tree represntation of the docs in their folders
+      // Get a tree representation of the docs in their folders
       const folders = allFolders.filter((f) => f.type === type);
       const tree = type === "Folder" ? this.#buildTreeFolder(docs) : this.#buildTree(docs, folders);
 
@@ -180,7 +180,8 @@ class Picker extends HandlebarsApplicationMixin(ApplicationV2) {
     // build root node
     const tree = createNode(null);
     tree.children = folders
-      .filter((f) => !f.folder)
+      // filter top-level folders, either have no parent folder or it isn't being imported
+      .filter((f) => !f.folder || !folders.some(i => i._id === f.folder))
       .map((f) => fillFolder(f, 1))
       .filter((node) => node !== null);
     tree.entries = docs.filter((d) => !d.folder);
